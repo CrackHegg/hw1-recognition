@@ -12,22 +12,21 @@ if __name__ == "__main__":
     random.seed(0)
 
     ##################################################################
-    # TODO: Create hyperparameter argument class
     # Use image size of 64x64 in Q1. We will use a default size of
     # 224x224 for the rest of the questions.
     # You should experiment and choose the correct hyperparameters
     # You should get a map of around 22 in 5 epochs
     ##################################################################
-    # args = ARGS(
-    #     epochs=10,
-    #     inp_size=64,
-    #     use_cuda=True,
-    #     val_every=70
-    #     lr=# TODO,
-    #     batch_size=#TODO,
-    #     step_size=#TODO,
-    #     gamma=#TODO
-    # )
+    args = ARGS(
+        epochs=10,
+        inp_size=64,
+        use_cuda=True,
+        val_every=70,
+        lr=0.0005,
+        batch_size=128,
+        step_size=10,
+        gamma=0.1
+    )
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################

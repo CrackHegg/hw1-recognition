@@ -5,6 +5,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import utils
 from voc_dataset import VOCDataset
+from datetime import datetime
 
 
 def save_this_epoch(args, epoch):
@@ -23,7 +24,11 @@ def save_model(epoch, model_name, model):
 
 
 def train(args, model, optimizer, scheduler=None, model_name='model'):
-    writer = SummaryWriter()
+    # Create unique log directory with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = f'runs/{model_name}_{timestamp}'
+    writer = SummaryWriter(log_dir=log_dir)
+    print(f"TensorBoard logs will be saved to: {log_dir}")
     train_loader = utils.get_data_loader(
         'voc', train=True, batch_size=args.batch_size, split='trainval', inp_size=args.inp_size)
     test_loader = utils.get_data_loader(
@@ -43,7 +48,6 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             output = model(data)
 
             ##################################################################
-            # TODO: Implement a suitable loss function for multi-label
             # classification. You are NOT allowed to use any pytorch built-in
             # functions. Remember to take care of underflows / overflows.
             # Function Inputs:
@@ -52,8 +56,21 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             #   - `wgt`: Weights (difficult or not), refer to voc_dataset.py
             # Function Outputs:
             #   - `output`: Computed loss, a single floating point number
+            #sigmoid 
+            def loss_function(output, target, wgt):
+                sigmoid_output = torch.sigmoid(output)
+                
+                smooth_factor = 0.1
+                target_smooth = target * (1 - smooth_factor) + smooth_factor * 0.5
+                
+                eps = 1e-10
+                loss = -(target_smooth * torch.log(sigmoid_output + eps) + (1 - target_smooth) * torch.log(1 - sigmoid_output + eps))
+
+                weighted_loss = loss * wgt
+                return weighted_loss.mean()
+            
             ##################################################################
-            loss = 0
+            loss = loss_function(output, target, wgt)
             ##################################################################
             #                          END OF YOUR CODE                      #
             ##################################################################
@@ -68,6 +85,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
                 for tag, value in model.named_parameters():
                     if value.grad is not None:
                         writer.add_histogram(tag + "/grad", value.grad.cpu().numpy(), cnt)
+                writer.flush()  # Ensure data is written to disk
 
             optimizer.step()
             
@@ -77,6 +95,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
                 ap, map = utils.eval_dataset_map(model, args.device, test_loader)
                 print("map: ", map)
                 writer.add_scalar("map", map, cnt)
+                writer.flush()  # Ensure data is written to disk
                 model.train()
             
             cnt += 1
@@ -84,6 +103,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
         if scheduler is not None:
             scheduler.step()
             writer.add_scalar("learning_rate", scheduler.get_last_lr()[0], cnt)
+            writer.flush()  # Ensure data is written to disk
 
         # save model
         if save_this_epoch(args, epoch):
@@ -92,4 +112,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
     # Validation iteration
     test_loader = utils.get_data_loader('voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
     ap, map = utils.eval_dataset_map(model, args.device, test_loader)
+    
+    # Close the writer to ensure all data is written
+    writer.close()
+    
     return ap, map

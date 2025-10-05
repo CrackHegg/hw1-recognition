@@ -39,7 +39,7 @@ else:
 NUM_CLASSES = 20
 BATCH_SIZE = 16
 IMAGE_SHAPE = (224, 224)
-NUM_WORKERS = 12
+NUM_WORKERS = 2
 DATASET_PATH = "../data"
 
 @dataclass
@@ -59,7 +59,7 @@ class HyperParameters:
 def create_dataset_and_dataloaders(subset=False):
     train_dataset = VOC2007DetectionTiny(
         DATASET_PATH, "train", image_size=IMAGE_SHAPE[0],
-        download=True# True (set to False after the first time)
+        download=False# True (set to False after the first time)
     )
     if subset:
         small_dataset = torch.utils.data.Subset(
@@ -185,8 +185,8 @@ def main(args):
             detector,
             small_val_loader,
             val_dataset.idx_to_class,
-            score_thresh=0.7,
-            nms_thresh=0.5,
+            score_thresh=0.8,
+            nms_thresh=0.1,
             device=DEVICE,
             dtype=torch.float32,
         )
@@ -201,7 +201,7 @@ def main(args):
             detector,
             val_loader,
             val_dataset.idx_to_class,
-            score_thresh=0.4,
+            score_thresh=0.8,
             nms_thresh=0.6,
             device=DEVICE,
             dtype=torch.float32,

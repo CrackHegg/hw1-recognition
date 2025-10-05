@@ -15,9 +15,8 @@ class ResNet(nn.Module):
 
         self.resnet = torchvision.models.resnet18(weights='IMAGENET1K_V1')
         ##################################################################
-        # TODO: Define a FC layer here to process the features
+        self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
         ##################################################################
-        pass
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -25,9 +24,8 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         ##################################################################
-        # TODO: Return raw outputs here
         ##################################################################
-        pass
+        return self.resnet(x)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -39,22 +37,22 @@ if __name__ == "__main__":
     random.seed(0)
 
     ##################################################################
-    # TODO: Create hyperparameter argument class
     # We will use a size of 224x224 for the rest of the questions. 
     # Note that you might have to change the augmentations
     # You should experiment and choose the correct hyperparameters
     # You should get a map of around 50 in 50 epochs
     ##################################################################
-    # args = ARGS(
-    #     epochs=50,
-    #     inp_size=64,
-    #     use_cuda=True,
-    #     val_every=70
-    #     lr=# TODO,
-    #     batch_size=#TODO,
-    #     step_size=#TODO,
-    #     gamma=#TODO
-    # )
+    args = ARGS(
+        epochs=50,
+        inp_size=224,
+        use_cuda=True,
+        val_every=70,
+        lr=0.0001,
+        batch_size=64,
+        step_size=10,
+        gamma=0.5,
+        save_at_end=True
+    )
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################

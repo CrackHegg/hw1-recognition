@@ -49,7 +49,7 @@ class VOCDataset(Dataset):
     def preload_anno(self):
         """
         :return: a list of labels. each element is in the form of [class, weight],
-         where both class and weight are a numpy array in shape of [20],
+        where both class and weight are a numpy array in shape of [20],
         """
         label_list = []
         for index in self.index_list:
@@ -57,7 +57,8 @@ class VOCDataset(Dataset):
             tree = ET.parse(fpath)
             
             #######################################################################
-            # TODO: Insert your code here to preload labels
+            
+                        
             # Hint: the folder Annotations contains .xml files with class labels
             # for objects in the image. The `tree` variable contains the .xml
             # information in an easy-to-access format (it might be useful to read
@@ -71,7 +72,16 @@ class VOCDataset(Dataset):
             # The weight vector should be a 20-dimensional vector with weight[i] = 0 iff an object of class i has the `difficult` attribute set to 1 in the XML file and 1 otherwise
             # The difficult attribute specifies whether a class is ambiguous and by setting its weight to zero it does not contribute to the loss during training 
             weight_vec = torch.ones(20)
-
+            
+            root = tree.getroot()
+            for child in root:
+                if child.tag == 'object':
+                    obj_name = child.find('name').text
+                    obj_difficult = int(child.find('difficult').text)
+                    class_id = self.get_class_index(obj_name)
+                    class_vec[class_id] = 1
+                    if obj_difficult == 1:
+                        weight_vec[class_id] = 0
             ######################################################################
             #                            END OF YOUR CODE                        #
             ######################################################################
@@ -82,7 +92,22 @@ class VOCDataset(Dataset):
 
     def get_random_augmentations(self):
         ######################################################################
-        # TODO: Return a list of random data augmentation transforms here
+        l = []
+        if self.split == 'train':
+            l.extend([
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomResizedCrop(self.size, scale=(0.6, 1.0), ratio=(0.75, 1.33)),  
+                transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.2), 
+                transforms.RandomRotation(degrees=20),  
+                transforms.RandomAffine(degrees=0, translate=(0.15, 0.15), scale=(0.9, 1.1)),  
+                transforms.RandomGrayscale(p=0.2),
+                transforms.RandomApply([transforms.GaussianBlur(3, sigma=(0.1, 2.0))], p=0.3),
+                transforms.RandomApply([transforms.RandomPosterize(bits=4)], p=0.2), 
+                transforms.RandomApply([transforms.RandomSolarize(threshold=128)], p=0.2)
+            ])
+        else:
+            l.extend([transforms.CenterCrop(self.size)])
+        return l
         # NOTE: make sure to not augment during test and replace random crops
         # with center crops. Hint: There are lots of possible data
         # augmentations. Some commonly used ones are random crops, flipping,
@@ -92,7 +117,7 @@ class VOCDataset(Dataset):
         # change and you will have to write the correct value of `flat_dim`
         # in line 46 in simple_cnn.py
         ######################################################################
-        pass
+        
         ######################################################################
         #                            END OF YOUR CODE                        #
         ######################################################################

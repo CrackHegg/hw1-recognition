@@ -132,7 +132,7 @@ def eval_dataset_map(model, device, test_loader):
             data = data.to(device)
             output = model(data)
             
-            pred = F.softmax(output, dim=-1).cpu().numpy()
+            pred = torch.sigmoid(output).cpu().numpy()
             gt = target.cpu().numpy()
             valid = wgt.cpu().numpy()
             
